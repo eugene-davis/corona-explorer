@@ -1,0 +1,12 @@
+include CHANGELOG.md
+include CONTRIBUTING.md
+include README.md
+include AUTHORS.md
+include LICENSE
+
+recursive-include tests *
+
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+
+recursive-include docs *.md conf.py *.jpg *.png *.gif
