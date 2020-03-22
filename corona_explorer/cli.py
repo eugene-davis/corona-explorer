@@ -7,6 +7,7 @@ import sys
 import argparse
 from .initialize import init
 from .export import export
+from .graph import graph
 
 
 def parse_args(args):
@@ -34,6 +35,14 @@ def parse_args(args):
     export_parser.add_argument("countries", type=str, nargs="+", help="Countries to export data for.")
     export_parser.add_argument("--export-path", type=str, default="./export", help="Location to export data to.")
     export_parser.set_defaults(func=export)
+
+    graph_parser = subparsers.add_parser("graph", description="Create and export graphs")
+    graph_parser.add_argument("countries", type=str, nargs="+", help="Countries to create graphs for.")
+    graph_parser.add_argument(
+        "--model_type", default="linear-regression", type=str, choices=["linear-regression"], help="Model type to use."
+    )
+    graph_parser.add_argument("--graph-path", type=str, default="./graph", help="Location to write graphs to.")
+    graph_parser.set_defaults(func=graph)
 
     return parser.parse_args(args)
 

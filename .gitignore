@@ -104,3 +104,4 @@ virt/
 # data
 *.db
 export/
+graph/
