@@ -6,6 +6,7 @@ Console script for corona_explorer.
 import sys
 import argparse
 from .initialize import init
+from .export import export
 
 
 def parse_args(args):
@@ -14,6 +15,8 @@ def parse_args(args):
     """
 
     parser = argparse.ArgumentParser(description="Commandline interface for corona_explorer")
+
+    parser.add_argument("--db", default="cases.db", help="Database location")
 
     subparsers = parser.add_subparsers()
 
@@ -25,8 +28,12 @@ def parse_args(args):
         default="open-covid-data/output/world.csv",
         help="Data source (csv) to read from",
     )
-    init_parser.add_argument("--db", default="cases.db", help="Database location")
     init_parser.set_defaults(func=init)
+
+    export_parser = subparsers.add_parser("export", description="Export the data to a file")
+    export_parser.add_argument("countries", type=str, nargs="+", help="Countries to export data for.")
+    export_parser.add_argument("--export-path", type=str, default="./export", help="Location to export data to.")
+    export_parser.set_defaults(func=export)
 
     return parser.parse_args(args)
 
