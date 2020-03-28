@@ -46,17 +46,46 @@ def create_tables(curse):
             deaths INTEGER,
             temp_data INTEGER,
             PRIMARY KEY(timestamp, country_code),
-            FOREIGN KEY(country_code) REFERENCES country_codes(country_code)
+            FOREIGN KEY(country_code) REFERENCES country_info(country_code)
             )
             """
     )
 
     curse.execute(
         """
-    CREATE TABLE country_info (
-        country_code TEXT,
-        country_name TEXT,
-        pop INTEGER
+        CREATE TABLE regional_cases (
+            timestamp INTEGER,
+            country_code TEXT,
+            regional_code TEXT,
+            confirmed_cases INTEGER,
+            deaths INTEGER,
+            temp_data INTEGER,
+            PRIMARY KEY(timestamp, country_code, regional_code),
+            FOREIGN KEY(country_code) REFERENCES country_info(country_code),
+            FOREIGN KEY(regional_code) REFERENCES region_info(regional_code)
+            )
+            """
+    )
+
+    curse.execute(
+        """
+        CREATE TABLE country_info (
+            country_code TEXT,
+            country_name TEXT,
+            pop INTEGER
+        )
+        """
+    )
+
+    curse.execute(
+        """
+        CREATE TABLE region_info (
+            country_code TEXT,
+            region_name TEXT,
+            region_code TEXT,
+            pop INTEGER,
+            PRIMARY KEY(country_code, region_code),
+            FOREIGN KEY(country_code) REFERENCES country_info(country_code)
         )
         """
     )
@@ -73,7 +102,33 @@ def fill_tables(curse, source):
         data.append(row)
 
     import_country_info(curse, data)
-    import_historical_data(curse, data)
+    import_region_info(curse, data)
+    import_historical_country_data(curse, data)
+    import_historical_regional_data(curse, data)
+
+
+def import_region_info(curse, data):
+    """
+    Fill out region_info table
+    """
+
+    Region = namedtuple("Region", ["country_code", "region_name", "region_code", "pop"])
+    regions = set()
+
+    for row in data[1:]:
+        if row[4] or row[3]:
+            region = Region(
+                country_code=row[1], region_name=row[4], region_code=row[3], pop=int(row[9]) if row[9] else None
+            )
+            regions.add(region)
+
+    curse.executemany(
+        """
+        INSERT INTO region_info (country_code, region_name, region_code,  pop)
+        VALUES (?, ?, ?, ?)
+        """,
+        list(regions),
+    )
 
 
 def import_country_info(curse, data):
@@ -85,8 +140,9 @@ def import_country_info(curse, data):
     countries = set()
 
     for row in data[1:]:
-        country = Country(country_name=row[2], country_code=row[1], pop=row[7])
-        countries.add(country)
+        if not row[4] and not row[3]:
+            country = Country(country_name=row[2], country_code=row[1], pop=int(row[9]) if row[9] else None)
+            countries.add(country)
 
     curse.executemany(
         """
@@ -97,7 +153,37 @@ def import_country_info(curse, data):
     )
 
 
-def import_historical_data(curse, data):
+def import_historical_regional_data(curse, data):
+    """
+    Import historical data to regional_cases
+    """
+    historical_data = []
+
+    Region_Entry = namedtuple("Region", ["country_code", "region_code", "timestamp", "confirmed_cases", "deaths"])
+
+    for row in data[1:]:
+        if row[4]:
+            timestamp = datetime.strptime(row[0], "%Y-%m-%d").timestamp()
+            region_entry = Region_Entry(
+                country_code=row[1],
+                region_code=row[3],
+                timestamp=timestamp,
+                confirmed_cases=int(row[5]) if row[5] else 0,
+                deaths=int(row[6]) if row[6] else 0,
+            )
+
+            historical_data.append(region_entry)
+
+    curse.executemany(
+        """
+        INSERT INTO regional_cases (country_code, regional_code, timestamp, confirmed_cases, deaths, temp_data)
+        VALUES (?, ?, ?, ?, ?, 0)
+        """,
+        historical_data,
+    )
+
+
+def import_historical_country_data(curse, data):
     """
     Import historical data to country_cases
     """
@@ -109,7 +195,10 @@ def import_historical_data(curse, data):
         if not row[4]:
             timestamp = datetime.strptime(row[0], "%Y-%m-%d").timestamp()
             country_entry = Country_Entry(
-                country_code=row[1], timestamp=timestamp, confirmed_cases=int(row[5]), deaths=int(row[6])
+                country_code=row[1],
+                timestamp=timestamp,
+                confirmed_cases=int(row[5]) if row[5] else 0,
+                deaths=int(row[6]) if row[6] else 0,
             )
 
             historical_data.append(country_entry)
