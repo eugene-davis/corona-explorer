@@ -8,32 +8,42 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from datetime import datetime
 
-from .retrieval import fetch_country_all_data
+from .retrieval import fetch_country_all_data, fetch_region_all_data
 
 
 def graph(args):
     Path(args.graph_path).mkdir(parents=True, exist_ok=True)
 
-    for country in args.countries:
-        country_data = fetch_country_all_data(country, args.db)
-        filename = "{date}.{country}.{model_type}.png".format(
-            country=country_data["country_name"],
-            date=datetime.utcnow().strftime("%Y-%m-%d"),
-            model_type=args.model_type,
+    data = []
+
+    if args.regions and len(args.countries) > 1:
+        raise ValueError("A region was provided with multiple countries, only one country can be provided.")
+
+    elif not args.regions:
+        for country in args.countries:
+            country_data = fetch_country_all_data(country, args.db)
+            data.append(country_data)
+    else:
+        for region in args.regions:
+            region_data = fetch_region_all_data(region, args.countries[0], args.db)
+            data.append(region_data)
+
+    for entity_data in data:
+        filename = "{date}.{title}.{model_type}.png".format(
+            title=entity_data["title"], date=datetime.utcnow().strftime("%Y-%m-%d"), model_type=args.model_type
         )
+        if args.model_type == "scatter-plot":
+            scatter_plot(entity_data, Path(args.graph_path, filename), args.scale)
 
-    if args.model_type == "scatter-plot":
-        scatter_plot(country_data, Path(args.graph_path, filename), args.scale)
-
-    elif args.model_type == "linear-regression":
-        line_fit(country_data, Path(args.graph_path, filename), args.scale)
+        elif args.model_type == "linear-regression":
+            line_fit(entity_data, Path(args.graph_path, filename), args.scale)
 
 
-def prepare_data(country_data):
+def prepare_data(entity_data):
     deaths = []
     confirmed = []
 
-    for day in country_data["history"]:
+    for day in entity_data["history"]:
         deaths.append(getattr(day, "deaths"))
         confirmed.append(getattr(day, "confirmed_cases"))
 
@@ -44,12 +54,12 @@ def prepare_data(country_data):
     return confirmed, deaths, days, days_predict
 
 
-def scatter_plot(country_data, filename, scale):
-    title = "COVID 19: {country} - Scatter Plot: {scale}-Scale\nGenerated: {date}".format(
-        country=country_data["country_name"], scale=scale, date=datetime.utcnow().strftime("%Y-%m-%d")
+def scatter_plot(entity_data, filename, scale):
+    title = "COVID 19: {title} - Scatter Plot: {scale}-Scale\nGenerated: {date}".format(
+        title=entity_data["title"], scale=scale, date=datetime.utcnow().strftime("%Y-%m-%d")
     )
 
-    confirmed, deaths, days, days_predict = prepare_data(country_data)
+    confirmed, deaths, days, days_predict = prepare_data(entity_data)
 
     plt.title(title)
 
@@ -64,12 +74,12 @@ def scatter_plot(country_data, filename, scale):
     plt.close()
 
 
-def line_fit(country_data, filename, scale):
-    title = "COVID 19: {country} - Linear Regression: {scale}-Scale\nGenerated: {date}".format(
-        country=country_data["country_name"], scale=scale, date=datetime.utcnow().strftime("%Y-%m-%d")
+def line_fit(entity_data, filename, scale):
+    title = "COVID 19: {title} - Linear Regression: {scale}-Scale\nGenerated: {date}".format(
+        title=entity_data["country_name"], scale=scale, date=datetime.utcnow().strftime("%Y-%m-%d")
     )
 
-    confirmed, deaths, days, days_predict = prepare_data(country_data)
+    confirmed, deaths, days, days_predict = prepare_data(entity_data)
 
     plt.title(title)
 

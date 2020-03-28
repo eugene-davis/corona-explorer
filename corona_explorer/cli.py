@@ -39,6 +39,13 @@ def parse_args(args):
     graph_parser = subparsers.add_parser("graph", description="Create and export graphs")
     graph_parser.add_argument("countries", type=str, nargs="+", help="Countries to create graphs for.")
     graph_parser.add_argument(
+        "--regions",
+        type=str,
+        default=None,
+        nargs="+",
+        help="Regions to create graphs for. Provide only one country when using this function.",
+    )
+    graph_parser.add_argument(
         "--model-type",
         default="scatter-plot",
         type=str,
