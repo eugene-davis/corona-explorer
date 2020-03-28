@@ -53,16 +53,16 @@ def create_tables(curse):
 
     curse.execute(
         """
-        CREATE TABLE regional_cases (
+        CREATE TABLE region_cases (
             timestamp INTEGER,
             country_code TEXT,
-            regional_code TEXT,
+            region_code TEXT,
             confirmed_cases INTEGER,
             deaths INTEGER,
             temp_data INTEGER,
-            PRIMARY KEY(timestamp, country_code, regional_code),
+            PRIMARY KEY(timestamp, country_code, region_code),
             FOREIGN KEY(country_code) REFERENCES country_info(country_code),
-            FOREIGN KEY(regional_code) REFERENCES region_info(regional_code)
+            FOREIGN KEY(region_code) REFERENCES region_info(region_code)
             )
             """
     )
@@ -104,7 +104,7 @@ def fill_tables(curse, source):
     import_country_info(curse, data)
     import_region_info(curse, data)
     import_historical_country_data(curse, data)
-    import_historical_regional_data(curse, data)
+    import_historical_region_data(curse, data)
 
 
 def import_region_info(curse, data):
@@ -153,9 +153,9 @@ def import_country_info(curse, data):
     )
 
 
-def import_historical_regional_data(curse, data):
+def import_historical_region_data(curse, data):
     """
-    Import historical data to regional_cases
+    Import historical data to region_cases
     """
     historical_data = []
 
@@ -176,7 +176,7 @@ def import_historical_regional_data(curse, data):
 
     curse.executemany(
         """
-        INSERT INTO regional_cases (country_code, regional_code, timestamp, confirmed_cases, deaths, temp_data)
+        INSERT INTO region_cases (country_code, region_code, timestamp, confirmed_cases, deaths, temp_data)
         VALUES (?, ?, ?, ?, ?, 0)
         """,
         historical_data,
