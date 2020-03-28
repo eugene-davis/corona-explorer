@@ -39,8 +39,13 @@ def parse_args(args):
     graph_parser = subparsers.add_parser("graph", description="Create and export graphs")
     graph_parser.add_argument("countries", type=str, nargs="+", help="Countries to create graphs for.")
     graph_parser.add_argument(
-        "--model_type", default="linear-regression", type=str, choices=["linear-regression"], help="Model type to use."
+        "--model-type",
+        default="scatter-plot",
+        type=str,
+        choices=["scatter-plot", "linear-regression"],
+        help="Model type to use.",
     )
+    graph_parser.add_argument("--scale", default="log", type=str, choices=["log", "linear"], help="Y-axis scale to use")
     graph_parser.add_argument("--graph-path", type=str, default="./graph", help="Location to write graphs to.")
     graph_parser.set_defaults(func=graph)
 

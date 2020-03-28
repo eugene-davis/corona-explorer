@@ -21,10 +21,15 @@ def graph(args):
             date=datetime.utcnow().strftime("%Y-%m-%d"),
             model_type=args.model_type,
         )
-        line_fit(country_data, Path(args.graph_path, filename), args.model_type)
+
+    if args.model_type == "scatter-plot":
+        scatter_plot(country_data, Path(args.graph_path, filename), args.scale)
+
+    elif args.model_type == "linear-regression":
+        line_fit(country_data, Path(args.graph_path, filename), args.scale)
 
 
-def line_fit(country_data, filename, model_type):
+def prepare_data(country_data):
     deaths = []
     confirmed = []
 
@@ -34,13 +39,42 @@ def line_fit(country_data, filename, model_type):
 
     days = np.linspace(1, len(confirmed), len(confirmed))
 
-    days_predict = np.linspace(1, 100, 100)
-    title = "COVID 19: {country} - {model_type}\nGenerated: {date}".format(
-        country=country_data["country_name"], date=datetime.utcnow().strftime("%Y-%m-%d"), model_type=model_type
+    days_predict = np.linspace(1, 200, 200)
+
+    return confirmed, deaths, days, days_predict
+
+
+def scatter_plot(country_data, filename, scale):
+    title = "COVID 19: {country} - Scatter Plot: {scale}-Scale\nGenerated: {date}".format(
+        country=country_data["country_name"], scale=scale, date=datetime.utcnow().strftime("%Y-%m-%d")
     )
+
+    confirmed, deaths, days, days_predict = prepare_data(country_data)
+
     plt.title(title)
 
     plt.xlabel("Time (days)")
+    plt.yscale(scale)
+
+    plt.scatter(days, confirmed, label="Confirmed Cases")
+    plt.scatter(days, deaths, label="Deaths")
+
+    plt.legend()
+    plt.savefig(filename)
+    plt.close()
+
+
+def line_fit(country_data, filename, scale):
+    title = "COVID 19: {country} - Linear Regression: {scale}-Scale\nGenerated: {date}".format(
+        country=country_data["country_name"], scale=scale, date=datetime.utcnow().strftime("%Y-%m-%d")
+    )
+
+    confirmed, deaths, days, days_predict = prepare_data(country_data)
+
+    plt.title(title)
+
+    plt.xlabel("Time (days)")
+    plt.yscale(scale)
 
     # Confirmed
     confirmed = np.array(confirmed)
