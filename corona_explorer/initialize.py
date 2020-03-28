@@ -106,12 +106,13 @@ def import_historical_data(curse, data):
     Country_Entry = namedtuple("Country_Entry", ["country_code", "timestamp", "confirmed_cases", "deaths"])
 
     for row in data[1:]:
-        timestamp = datetime.strptime(row[0], "%Y-%m-%d").timestamp()
-        country_entry = Country_Entry(
-            country_code=row[1], timestamp=timestamp, confirmed_cases=int(row[3]), deaths=int(row[4])
-        )
+        if not row[4]:
+            timestamp = datetime.strptime(row[0], "%Y-%m-%d").timestamp()
+            country_entry = Country_Entry(
+                country_code=row[1], timestamp=timestamp, confirmed_cases=int(row[5]), deaths=int(row[6])
+            )
 
-        historical_data.append(country_entry)
+            historical_data.append(country_entry)
 
     curse.executemany(
         """
