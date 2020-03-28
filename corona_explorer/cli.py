@@ -26,7 +26,7 @@ def parse_args(args):
     init_parser.add_argument(
         "--source",
         type=argparse.FileType("r"),
-        default="open-covid-data/output/world.csv",
+        default="open-covid-data/output/data.csv",
         help="Data source (csv) to read from",
     )
     init_parser.set_defaults(func=init)
