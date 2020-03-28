@@ -48,9 +48,10 @@ STATE_INFO = {
 }
 
 
-def download_data():
+def get_data():
     Region_Entry = namedtuple(
-        "Region", ["country_code", "region_code", "timestamp", "confirmed_cases", "deaths", "source"]
+        "Region",
+        ["country_code", "region_name", "region_code", "timestamp", "confirmed_cases", "deaths", "pop", "source"],
     )
 
     raw_india_data = requests.get("https://api.rootnet.in/covid19-in/stats/history")
@@ -63,10 +64,12 @@ def download_data():
         for region in day_entry["regional"]:
             region_entry = Region_Entry(
                 country_code="IN",
+                region_name=region["loc"],
                 region_code=STATE_INFO[region["loc"]]["region_code"],
                 timestamp=timestamp,
                 confirmed_cases=region["confirmedCasesIndian"] + region["confirmedCasesForeign"],
                 deaths=region["deaths"],
+                pop=STATE_INFO[region["loc"]]["pop"],
                 source="covid19india/api",
             )
             india_data.append(region_entry)

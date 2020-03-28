@@ -29,6 +29,13 @@ def parse_args(args):
         default="open-covid-data/output/data.csv",
         help="Data source (csv) to read from",
     )
+    init_parser.add_argument(
+        "--extra-sources",
+        type=str,
+        nargs="+",
+        choices=["india"],
+        help="Extra scrapers to including when initializing the database. They must be available in corona_explorer/extra_scrapers.",
+    )
     init_parser.set_defaults(func=init)
 
     export_parser = subparsers.add_parser("export", description="Export the data to a file")

@@ -6,8 +6,8 @@ import sqlite3
 import os
 import csv
 from datetime import datetime
-
 from collections import namedtuple
+from importlib import import_module
 
 
 def init(args):
@@ -28,9 +28,62 @@ def init(args):
         with conn:
             create_tables(curse)
             fill_tables(curse, args.source)
+            extra_scrapers(curse, args.extra_sources)
     else:
         conn = sqlite3.connect(db_file)
         curse = conn.cursor()
+
+
+def extra_scrapers(curse, scrapers):
+    if not scrapers:
+        return
+
+    for scraper in scrapers:
+        scraper = import_module("corona_explorer.extra_sources." + scraper)
+        scraper_data = scraper.get_data()
+
+        Region = namedtuple("Region", ["country_code", "region_name", "region_code", "pop"])
+        regions = set()
+
+        Region_Entry = namedtuple(
+            "Region", ["country_code", "region_code", "timestamp", "confirmed_cases", "deaths", "source"]
+        )
+        data = []
+
+        for entry in scraper_data:
+            region = Region(
+                country_code=getattr(entry, "country_code"),
+                region_name=getattr(entry, "region_name"),
+                region_code=getattr(entry, "region_code"),
+                pop=getattr(entry, "pop"),
+            )
+            regions.add(region)
+
+            region_entry = Region_Entry(
+                country_code=getattr(entry, "country_code"),
+                region_code=getattr(entry, "region_code"),
+                timestamp=getattr(entry, "timestamp"),
+                confirmed_cases=getattr(entry, "confirmed_cases"),
+                deaths=getattr(entry, "deaths"),
+                source=getattr(entry, "source"),
+            )
+            data.append(region_entry)
+
+        curse.executemany(
+            """
+            INSERT INTO region_info (country_code, region_name, region_code,  pop)
+            VALUES (?, ?, ?, ?)
+            """,
+            list(regions),
+        )
+
+        curse.executemany(
+            """
+            INSERT INTO region_cases (country_code, region_code, timestamp, confirmed_cases, deaths, source, temp_data)
+            VALUES (?, ?, ?, ?, ?, ?, 0)
+            """,
+            data,
+        )
 
 
 def create_tables(curse):
@@ -60,6 +113,7 @@ def create_tables(curse):
             confirmed_cases INTEGER,
             deaths INTEGER,
             temp_data INTEGER,
+            source TEXT,
             PRIMARY KEY(timestamp, country_code, region_code),
             FOREIGN KEY(country_code) REFERENCES country_info(country_code),
             FOREIGN KEY(region_code) REFERENCES region_info(region_code)
